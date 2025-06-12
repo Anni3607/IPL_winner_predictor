@@ -139,7 +139,6 @@ with col2:
 
 
 # --- Feature Engineering ---
-# Perform calculations, ensuring scalar results at each step.
 # All inputs to these calculations are now guaranteed to be scalars.
 num_overs = int(overs_completed_input)
 num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10))
@@ -161,20 +160,23 @@ else:
 
 
 # --- Create Input DataFrame ---
-# All variables passed to input_data are now guaranteed to be scalars from `get_scalar_value`.
-# Final type casting for DataFrame consistency.
-input_data = {
-    'batting_team': [str(batting_team_input)],
-    'bowling_team': [str(bowling_team_input)],
-    'city': [str(city_input)],
-    'total_runs_x': [int(total_runs_x_input)],
-    'balls_left': [int(balls_left_calculated)],
-    'wickets': [int(wickets_input)],
-    'rrr': [float(rrr_calculated)],
-    'runs_left': [int(runs_left_calculated)],
-    'crr': [float(crr_calculated)]
+# This is the crucial part that is causing the issue.
+# Instead of `[value]`, we collect all scalar values into a single dictionary
+# and then create the DataFrame. This is the most common and robust way for a single row.
+input_row = {
+    'batting_team': str(batting_team_input),
+    'bowling_team': str(bowling_team_input),
+    'city': str(city_input),
+    'total_runs_x': int(total_runs_x_input),
+    'balls_left': int(balls_left_calculated),
+    'wickets': int(wickets_input),
+    'rrr': float(rrr_calculated),
+    'runs_left': int(runs_left_calculated),
+    'crr': float(crr_calculated)
 }
-input_df = pd.DataFrame(input_data)
+# Create DataFrame from a list containing this single dictionary (this is standard practice)
+input_df = pd.DataFrame([input_row])
+
 
 # --- Make Prediction ---
 if st.button('Predict Winner', key='predict_button'):
@@ -232,17 +234,9 @@ if st.button('Predict Winner', key='predict_button'):
     except ValueError as e:
         st.error(f"Prediction Error: {e}")
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
-        st.write("Debug info from `input_data` values (before final list wrapping):")
-        # These debug prints will now show the direct scalar values that were processed.
-        st.write(f"- batting_team: {batting_team_input} (type: {type(batting_team_input)})")
-        st.write(f"- bowling_team: {bowling_team_input} (type: {type(bowling_team_input)})")
-        st.write(f"- city: {city_input} (type: {type(city_input)})")
-        st.write(f"- total_runs_x: {total_runs_x_input} (type: {type(total_runs_x_input)})")
-        st.write(f"- balls_left: {balls_left_calculated} (type: {type(balls_left_calculated)})")
-        st.write(f"- wickets: {wickets_input} (type: {type(wickets_input)})")
-        st.write(f"- rrr: {rrr_calculated} (type: {type(rrr_calculated)})")
-        st.write(f"- runs_left: {runs_left_calculated} (type: {type(runs_left_calculated)})")
-        st.write(f"- crr: {crr_calculated} (type: {type(crr_calculated)})")
+        st.write("Debug info from `input_row` (this should be a dictionary of scalars):")
+        for key, val in input_row.items():
+            st.write(f"- {key}: {val} (type: {type(val)})")
 
     except Exception as e:
         st.error(f"An unexpected error occurred during prediction: {e}")

@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load the trained model
+# Load model
 pipe = joblib.load("ipl_model.pkl")
 
-# Team logos
+# Logos and taglines
 team_logos = {
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
     "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2e/Chennai_Super_Kings_Logo.svg",
@@ -32,24 +32,11 @@ team_taglines = {
     "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
 }
 
-# Streamlit UI
-st.markdown("""
-    <style>
-        .stApp {
-            background-color: #f4f9f9;
-            font-family: 'Arial', sans-serif;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
+# Streamlit layout
 st.markdown("<h1 style='text-align: center; color: #333;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
-st.markdown("""
-    <div style="text-align:center;">
-        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg" width="120"/>
-    </div>
-""", unsafe_allow_html=True)
 
 teams = list(team_logos.keys())
+
 cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
           'Delhi', 'Chandigarh', 'Kanpur', 'Jaipur', 'Chennai', 'Cape Town',
           'Port Elizabeth', 'Durban', 'Centurion', 'East London', 'Johannesburg',
@@ -57,8 +44,8 @@ cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolka
           'Visakhapatnam', 'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali',
           'Bengaluru']
 
+# Input form
 col1, col2 = st.columns(2)
-
 with col1:
     batting_team = st.selectbox('Batting Team', sorted(teams))
 with col2:
@@ -79,29 +66,38 @@ if st.button('Predict Winner'):
         rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
         wickets_left = 10 - wickets
 
-        input_df = pd.DataFrame({
-            'batting_team': [batting_team],
-            'bowling_team': [bowling_team],
-            'city': [city],
-            'runs_left': [runs_left],
-            'balls_left': [balls_left],
-            'wickets_left': [wickets_left],
-            'total_runs_x': [target],
-            'crr': [crr],
-            'rrr': [rrr]
-        })
+        # ✅ Absolutely no lists inside
+        input_dict = {
+            'batting_team': batting_team,
+            'bowling_team': bowling_team,
+            'city': city,
+            'runs_left': runs_left,
+            'balls_left': balls_left,
+            'wickets_left': wickets_left,
+            'total_runs_x': target,
+            'crr': crr,
+            'rrr': rrr
+        }
 
+        # ✅ Convert scalars to DataFrame with one row
+        input_df = pd.DataFrame([input_dict])
+
+        # Debug - View DataFrame
+        st.write("📊 Input DataFrame Sent to Model:")
+        st.dataframe(input_df)
+
+        # ✅ Predict
         prediction = pipe.predict_proba(input_df)
-        win = prediction[0][1]
-        loss = prediction[0][0]
+        win_prob = prediction[0][1]
+        lose_prob = prediction[0][0]
 
-        st.success(f"🏏 {batting_team} Win Chance: **{win*100:.2f}%**")
-        st.info(f"🎯 {bowling_team} Win Chance: **{loss*100:.2f}%**")
+        st.success(f"🏏 {batting_team} Win Chance: **{win_prob * 100:.2f}%**")
+        st.info(f"🎯 {bowling_team} Win Chance: **{lose_prob * 100:.2f}%**")
 
-        winner = batting_team if win > loss else bowling_team
+        winner = batting_team if win_prob > lose_prob else bowling_team
         st.markdown(f"### 🏆 **{winner} - {team_taglines.get(winner, '')}**")
         st.image(team_logos[winner], width=150)
 
     except Exception as e:
-        st.error("Prediction Error: All arrays must be of the same length")
-        st.json(input_df.to_dict())
+        st.error(f"❌ Prediction Error: {str(e)}")
+        st.json(input_dict)

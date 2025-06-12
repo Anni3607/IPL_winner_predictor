@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import joblib
@@ -116,41 +115,44 @@ with col2:
     wickets_input = st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets')
 
 # --- Feature Engineering ---
+# Ensure all intermediate calculations result in scalar int/float values
 num_overs = int(overs_completed_input)
-num_balls_in_current_over = round((overs_completed_input - num_overs) * 10)
-total_balls_played = num_overs * 6 + num_balls_in_current_over
-balls_left_calculated = 120 - total_balls_played
+num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10)) # Explicitly cast to int
+total_balls_played = int(num_overs * 6 + num_balls_in_current_over) # Explicitly cast to int
+balls_left_calculated = int(120 - total_balls_played) # Explicitly cast to int
 balls_left_calculated = max(0, balls_left_calculated)
 
-runs_left_calculated = total_runs_x_input - current_score_input
+runs_left_calculated = int(total_runs_x_input - current_score_input) # Explicitly cast to int
 
-if balls_left_calculated > 0:
-    rrr_calculated = (runs_left_calculated * 6) / balls_left_calculated
+if float(balls_left_calculated) > 0: # Ensure float comparison
+    rrr_calculated = float((runs_left_calculated * 6) / balls_left_calculated) # Explicitly cast to float
 else:
-    rrr_calculated = 0
+    rrr_calculated = 0.0 # Use float for consistency
 
-if overs_completed_input > 0:
-    crr_calculated = current_score_input / overs_completed_input
+if float(overs_completed_input) > 0: # Ensure float comparison
+    crr_calculated = float(current_score_input / overs_completed_input) # Explicitly cast to float
 else:
-    crr_calculated = 0
+    crr_calculated = 0.0 # Use float for consistency
+
 
 # --- Create Input DataFrame ---
 input_data = {
-    'batting_team': [batting_team_input],
-    'bowling_team': [bowling_team_input],
-    'city': [city_input],
-    'total_runs_x': [total_runs_x_input],
-    'balls_left': [balls_left_calculated],
-    'wickets': [wickets_input],
-    'rrr': [rrr_calculated],
-    'runs_left': [runs_left_calculated],
-    'crr': [crr_calculated]
+    'batting_team': [str(batting_team_input)], # Ensure string
+    'bowling_team': [str(bowling_team_input)], # Ensure string
+    'city': [str(city_input)], # Ensure string
+    'total_runs_x': [int(total_runs_x_input)], # Ensure int
+    'balls_left': [int(balls_left_calculated)], # Ensure int
+    'wickets': [int(wickets_input)], # Ensure int
+    'rrr': [float(rrr_calculated)], # Ensure float
+    'runs_left': [int(runs_left_calculated)], # Ensure int
+    'crr': [float(crr_calculated)] # Ensure float
 }
 input_df = pd.DataFrame(input_data)
 
 # --- Make Prediction ---
 if st.button('Predict Winner', key='predict_button'):
     try:
+        # Display the DataFrame being sent to the model for debugging
         st.subheader("DataFrame sent to Model:")
         st.dataframe(input_df)
 
@@ -188,12 +190,12 @@ if st.button('Predict Winner', key='predict_button'):
                 st.write(f"**{row['Team']}**: {row['Probability']:.2%}")
 
         with col_logo:
-            winning_team_logo = TEAM_INFO.get(winning_team, {}).get('logo')
-            if winning_team_logo:
+            winning_team_logo_path = TEAM_INFO.get(winning_team, {}).get('logo')
+            if winning_team_logo_path:
                 try:
-                    st.image(winning_team_logo, caption=f"{winning_team} Logo", width=150)
+                    st.image(winning_team_logo_path, caption=f"{winning_team} Logo", width=150)
                 except FileNotFoundError:
-                    st.warning(f"Logo file '{winning_team_logo}' not found for {winning_team}.")
+                    st.warning(f"Logo file '{winning_team_logo_path}' not found for {winning_team}. Make sure it's uploaded to your repository.")
             else:
                 st.info(f"No logo available for {winning_team}.")
 
@@ -205,4 +207,4 @@ if st.button('Predict Winner', key='predict_button'):
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
     except Exception as e:
         st.error(f"An unexpected error occurred during prediction: {e}")
-        st.write("Please check your input values and the model's compatibility.")
+        st.write("Please check your input values and the model's compatibility, and ensure your `MODEL_CLASSES` list in `app.py` is correct.")

@@ -31,7 +31,7 @@ TEAM_INFO = {
 
 # 3. Get Model Class Names (Team Names in the order your model predicts them)
 #    !!!! IMPORTANT !!!!
-#    REPLACE THIS LIST WITH THE EXACT ORDER YOU GOT FROM YOUR COLAB NOTEBOOK.
+#    REPLACE THIS LIST WITH THE EXACT ORDER YOU GOT FROM YOUR COLAB NOTEBOOK (Part 1 of previous instructions).
 #    Example: If Colab showed ['CSK', 'MI', 'RCB'], then put that here.
 MODEL_CLASSES = np.array(['Chennai Super Kings', 'Mumbai Indians', 'Royal Challengers Bangalore',
                           'Kolkata Knight Riders', 'Delhi Capitals', 'Sunrisers Hyderabad',
@@ -115,37 +115,41 @@ with col2:
     wickets_input = st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets')
 
 # --- Feature Engineering ---
-# Ensure all intermediate calculations result in scalar int/float values
+# Ensure all intermediate calculations result in scalar int/float values.
+# Adding extra defensive casting here as well.
 num_overs = int(overs_completed_input)
-num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10)) # Explicitly cast to int
-total_balls_played = int(num_overs * 6 + num_balls_in_current_over) # Explicitly cast to int
-balls_left_calculated = int(120 - total_balls_played) # Explicitly cast to int
+# The `round` and `int()` ensures we handle overs like 5.3 correctly (5 overs, 3 balls)
+num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10))
+total_balls_played = int(num_overs * 6 + num_balls_in_current_over)
+balls_left_calculated = int(120 - total_balls_played)
 balls_left_calculated = max(0, balls_left_calculated)
 
-runs_left_calculated = int(total_runs_x_input - current_score_input) # Explicitly cast to int
+runs_left_calculated = int(total_runs_x_input - current_score_input)
 
-if float(balls_left_calculated) > 0: # Ensure float comparison
-    rrr_calculated = float((runs_left_calculated * 6) / balls_left_calculated) # Explicitly cast to float
+# Defensive casting to float before division to prevent int division issues and ensure float result
+if float(balls_left_calculated) > 0:
+    rrr_calculated = float((runs_left_calculated * 6) / float(balls_left_calculated))
 else:
-    rrr_calculated = 0.0 # Use float for consistency
+    rrr_calculated = 0.0
 
-if float(overs_completed_input) > 0: # Ensure float comparison
-    crr_calculated = float(current_score_input / overs_completed_input) # Explicitly cast to float
+if float(overs_completed_input) > 0:
+    crr_calculated = float(current_score_input / float(overs_completed_input))
 else:
-    crr_calculated = 0.0 # Use float for consistency
+    crr_calculated = 0.0
 
 
 # --- Create Input DataFrame ---
+# EXTREME TYPE ENFORCEMENT HERE: Ensure every value is a scalar before putting into list []
 input_data = {
-    'batting_team': [str(batting_team_input)], # Ensure string
-    'bowling_team': [str(bowling_team_input)], # Ensure string
-    'city': [str(city_input)], # Ensure string
-    'total_runs_x': [int(total_runs_x_input)], # Ensure int
-    'balls_left': [int(balls_left_calculated)], # Ensure int
-    'wickets': [int(wickets_input)], # Ensure int
-    'rrr': [float(rrr_calculated)], # Ensure float
-    'runs_left': [int(runs_left_calculated)], # Ensure int
-    'crr': [float(crr_calculated)] # Ensure float
+    'batting_team': [str(batting_team_input)],
+    'bowling_team': [str(bowling_team_input)],
+    'city': [str(city_input)],
+    'total_runs_x': [int(total_runs_x_input)],
+    'balls_left': [int(balls_left_calculated)],
+    'wickets': [int(wickets_input)],
+    'rrr': [float(rrr_calculated)],
+    'runs_left': [int(runs_left_calculated)],
+    'crr': [float(crr_calculated)]
 }
 input_df = pd.DataFrame(input_data)
 
@@ -205,6 +209,9 @@ if st.button('Predict Winner', key='predict_button'):
     except ValueError as e:
         st.error(f"Prediction Error: {e}")
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
+        st.write("Debug info from `input_data` values:")
+        for key, val in input_data.items():
+            st.write(f"- {key}: {val} (type: {type(val)}, inner_type: {type(val[0]) if isinstance(val, list) and val else 'N/A'})")
     except Exception as e:
         st.error(f"An unexpected error occurred during prediction: {e}")
         st.write("Please check your input values and the model's compatibility, and ensure your `MODEL_CLASSES` list in `app.py` is correct.")

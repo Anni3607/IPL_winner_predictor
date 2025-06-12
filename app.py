@@ -2,135 +2,106 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Set page config
-st.set_page_config(page_title="IPL Win Predictor", page_icon="🏏", layout="centered")
+# Load the trained model
+pipe = joblib.load("ipl_model.pkl")
 
-# Taglines
-team_taglines = {
-    "Chennai Super Kings": "Whistle Podu! 🦁",
-    "Mumbai Indians": "Duniya Hila Denge! 🔵",
-    "Kolkata Knight Riders": "Korbo Lorbo Jeetbo! 🟣",
-    "Delhi Capitals": "Yeh Hai Nayi Dilli! 🔴",
-    "Royal Challengers Bangalore": "Ee Sala Cup Namde! 🔥",
-    "Rajasthan Royals": "Halla Bol! 👑",
-    "Punjab Kings": "Sher Squad! 🟥",
-    "Sunrisers Hyderabad": "Orange Army Rising! 🟠"
-}
-
-# Team logos from URLs
+# Team logos
 team_logos = {
-    "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2d/Chennai_Super_Kings_Logo.png",
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
+    "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2e/Chennai_Super_Kings_Logo.svg",
     "Kolkata Knight Riders": "https://upload.wikimedia.org/wikipedia/en/4/4c/Kolkata_Knight_Riders_Logo.svg",
-    "Delhi Capitals": "https://upload.wikimedia.org/wikipedia/en/d/dc/Delhi_Capitals.svg",
-    "Royal Challengers Bangalore": "https://upload.wikimedia.org/wikipedia/en/0/09/Royal_Challengers_Bangalore_Logo.svg",
-    "Rajasthan Royals": "https://upload.wikimedia.org/wikipedia/en/6/60/Rajasthan_Royals_Logo.svg",
+    "Royal Challengers Bangalore": "https://upload.wikimedia.org/wikipedia/en/0/0a/Royal_Challengers_Bangalore_Logo.svg",
+    "Delhi Capitals": "https://upload.wikimedia.org/wikipedia/en/d/d4/Delhi_Capitals.svg",
+    "Sunrisers Hyderabad": "https://upload.wikimedia.org/wikipedia/en/e/e7/Sunrisers_Hyderabad.png",
     "Punjab Kings": "https://upload.wikimedia.org/wikipedia/en/d/d4/Punjab_Kings_Logo.svg",
-    "Sunrisers Hyderabad": "https://upload.wikimedia.org/wikipedia/en/8/81/Sunrisers_Hyderabad.svg"
+    "Rajasthan Royals": "https://upload.wikimedia.org/wikipedia/en/6/60/Rajasthan_Royals_Logo.svg",
+    "Gujarat Titans": "https://upload.wikimedia.org/wikipedia/en/0/09/Gujarat_Titans_Logo.svg",
+    "Lucknow Super Giants": "https://upload.wikimedia.org/wikipedia/en/5/5d/Lucknow_Super_Giants_Logo.svg"
 }
 
-# Logo display function
-def display_logo_from_url(team_name, width=100):
-    url = team_logos.get(team_name)
-    if url:
-        st.markdown(f"<img src='{url}' width='{width}' style='margin-bottom:10px;'>", unsafe_allow_html=True)
+team_taglines = {
+    "Mumbai Indians": "Duniya Hila Denge 🔵",
+    "Chennai Super Kings": "Whistle Podu 🦁",
+    "Kolkata Knight Riders": "Korbo Lorbo Jeetbo 💜",
+    "Royal Challengers Bangalore": "Ee Sala Cup Namde 🔥",
+    "Delhi Capitals": "Roar Macha 🦅",
+    "Sunrisers Hyderabad": "Orange Army 🧡",
+    "Punjab Kings": "Sadda Punjab ❤️",
+    "Rajasthan Royals": "Halla Bol 💗",
+    "Gujarat Titans": "Aava De! 💪",
+    "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
+}
 
-# Background color
+# Streamlit UI
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #f4f9f9;
-        font-family: 'Arial', sans-serif;
-    }
+        .stApp {
+            background-color: #f4f9f9;
+            font-family: 'Arial', sans-serif;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# IPL logo (optional)
+st.markdown("<h1 style='text-align: center; color: #333;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
 st.markdown("""
     <div style="text-align:center;">
-        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/Indian_Premier_League_Official_Logo.svg" width="120"/>
+        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg" width="120"/>
     </div>
 """, unsafe_allow_html=True)
 
-st.title("🏏 IPL Match Win Predictor")
+teams = list(team_logos.keys())
+cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
+          'Delhi', 'Chandigarh', 'Kanpur', 'Jaipur', 'Chennai', 'Cape Town',
+          'Port Elizabeth', 'Durban', 'Centurion', 'East London', 'Johannesburg',
+          'Kimberley', 'Bloemfontein', 'Ahmedabad', 'Cuttack', 'Nagpur', 'Dharamsala',
+          'Visakhapatnam', 'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali',
+          'Bengaluru']
 
-# Load model
-pipe = joblib.load("ipl_model.pkl")
+col1, col2 = st.columns(2)
 
+with col1:
+    batting_team = st.selectbox('Batting Team', sorted(teams))
+with col2:
+    bowling_team = st.selectbox('Bowling Team', sorted(teams))
 
-# Inputs
-teams = [
-    'Chennai Super Kings', 'Delhi Capitals', 'Kolkata Knight Riders',
-    'Mumbai Indians', 'Punjab Kings', 'Rajasthan Royals',
-    'Royal Challengers Bangalore', 'Sunrisers Hyderabad'
-]
+city = st.selectbox('Match City', sorted(cities))
+target = st.number_input('Target Score', min_value=1)
+score = st.number_input('Current Score', min_value=0)
+overs = st.number_input('Overs Completed', min_value=0.0, max_value=20.0, step=0.1)
+wickets = st.number_input('Wickets Lost', min_value=0, max_value=10, step=1)
 
-cities = [
-    'Hyderabad', 'Bangalore', 'Mumbai', 'Indore', 'Kolkata',
-    'Delhi', 'Chandigarh', 'Jaipur', 'Chennai', 'Cape Town',
-    'Port Elizabeth', 'Durban', 'Centurion', 'East London',
-    'Johannesburg', 'Kimberley', 'Bloemfontein', 'Ahmedabad',
-    'Cuttack', 'Nagpur', 'Dharamsala', 'Visakhapatnam', 'Pune',
-    'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali'
-]
-
-# Sidebar
-st.sidebar.header("Match Details")
-batting_team = st.sidebar.selectbox("Batting Team", sorted(teams))
-bowling_team = st.sidebar.selectbox("Bowling Team", sorted(teams))
-city = st.sidebar.selectbox("City", sorted(cities))
-target = st.sidebar.number_input("Target Score", min_value=1)
-score = st.sidebar.number_input("Current Score", min_value=0, max_value=target)
-overs = st.sidebar.number_input("Overs Completed", min_value=0.0, max_value=20.0, step=0.1)
-wickets = st.sidebar.number_input("Wickets Lost", min_value=0, max_value=10)
-
-if st.sidebar.button("Predict"):
-
-    runs_left = target - score
-    balls_left = 120 - int(overs * 6)
-    wickets_left = 10 - wickets
-    crr = score / overs if overs > 0 else 0
-    rrr = (runs_left * 6) / balls_left if balls_left > 0 else 0
-
-    # ✅ FIXED COLUMN NAME: 'wickets_left'
-   input_df = pd.DataFrame({
-    'batting_team': [batting_team],
-    'bowling_team': [bowling_team],
-    'city': [city],
-    'runs_left': [runs_left],
-    'balls_left': [balls_left],
-    'wickets_left': [10 - wickets],  # ✅ FIXED
-    'total_runs_x': [target],
-    'crr': [crr],
-    'rrr': [rrr]
-})
-
-    })
-
+if st.button('Predict Winner'):
     try:
+        balls_bowled = overs * 6
+        balls_left = int(120 - balls_bowled)
+        runs_left = int(target - score)
+        crr = score / overs if overs > 0 else 0
+        rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
+        wickets_left = 10 - wickets
+
+        input_df = pd.DataFrame({
+            'batting_team': [batting_team],
+            'bowling_team': [bowling_team],
+            'city': [city],
+            'runs_left': [runs_left],
+            'balls_left': [balls_left],
+            'wickets_left': [wickets_left],
+            'total_runs_x': [target],
+            'crr': [crr],
+            'rrr': [rrr]
+        })
+
         prediction = pipe.predict_proba(input_df)
-        loss = prediction[0][0]
         win = prediction[0][1]
+        loss = prediction[0][0]
 
-        # Logos
-        st.markdown("### 🧢 Team Logos")
-        cols = st.columns(2)
-        with cols[0]:
-            st.markdown(f"**{batting_team}**")
-            display_logo_from_url(batting_team)
-        with cols[1]:
-            st.markdown(f"**{bowling_team}**")
-            display_logo_from_url(bowling_team)
+        st.success(f"🏏 {batting_team} Win Chance: **{win*100:.2f}%**")
+        st.info(f"🎯 {bowling_team} Win Chance: **{loss*100:.2f}%**")
 
-        # Win chance
-        st.markdown("## 📊 Win Probability")
-        st.success(f"🏆 {batting_team} Win Chance: **{win*100:.2f}%**")
-        st.info(f"📉 {bowling_team} Win Chance: **{loss*100:.2f}%**")
-
-        # Tagline
         winner = batting_team if win > loss else bowling_team
-        st.markdown(f"### 🎉 **{winner} - {team_taglines.get(winner, 'Let the best team win!')}**")
+        st.markdown(f"### 🏆 **{winner} - {team_taglines.get(winner, '')}**")
+        st.image(team_logos[winner], width=150)
 
     except Exception as e:
-        st.error(f"Prediction Error: {e}")
-        st.json(input_df.to_dict())  # show data if error for debugging
+        st.error("Prediction Error: All arrays must be of the same length")
+        st.json(input_df.to_dict())

@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model
+# Load the trained model
 pipe = joblib.load("ipl_model.pkl")
 
-# Logos and taglines
+# Team logos
 team_logos = {
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
     "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2e/Chennai_Super_Kings_Logo.svg",
@@ -32,11 +32,26 @@ team_taglines = {
     "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
 }
 
-# Streamlit layout
+# Custom UI styling
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: #f4f9f9;
+            font-family: 'Arial', sans-serif;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Page Title
 st.markdown("<h1 style='text-align: center; color: #333;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
+st.markdown("""
+    <div style="text-align:center;">
+        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg" width="120"/>
+    </div>
+""", unsafe_allow_html=True)
 
+# Inputs
 teams = list(team_logos.keys())
-
 cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
           'Delhi', 'Chandigarh', 'Kanpur', 'Jaipur', 'Chennai', 'Cape Town',
           'Port Elizabeth', 'Durban', 'Centurion', 'East London', 'Johannesburg',
@@ -44,8 +59,8 @@ cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolka
           'Visakhapatnam', 'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali',
           'Bengaluru']
 
-# Input form
 col1, col2 = st.columns(2)
+
 with col1:
     batting_team = st.selectbox('Batting Team', sorted(teams))
 with col2:
@@ -57,47 +72,42 @@ score = st.number_input('Current Score', min_value=0)
 overs = st.number_input('Overs Completed', min_value=0.0, max_value=20.0, step=0.1)
 wickets = st.number_input('Wickets Lost', min_value=0, max_value=10, step=1)
 
+# Prediction Trigger
 if st.button('Predict Winner'):
     try:
+        # Feature engineering
         balls_bowled = overs * 6
         balls_left = int(120 - balls_bowled)
         runs_left = int(target - score)
         crr = score / overs if overs > 0 else 0
         rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
-        wickets_left = 10 - wickets
 
-        # ✅ Absolutely no lists inside
-        input_dict = {
+        # Ensure matching expected model columns
+        input_df = pd.DataFrame([{
             'batting_team': batting_team,
             'bowling_team': bowling_team,
             'city': city,
             'runs_left': runs_left,
             'balls_left': balls_left,
-            'wickets_left': wickets_left,
+            'wickets': wickets,  # ✅ MATCHING MODEL COLUMN NAME
             'total_runs_x': target,
             'crr': crr,
             'rrr': rrr
-        }
+        }])
 
-        # ✅ Convert scalars to DataFrame with one row
-        input_df = pd.DataFrame([input_dict])
-
-        # Debug - View DataFrame
-        st.write("📊 Input DataFrame Sent to Model:")
-        st.dataframe(input_df)
-
-        # ✅ Predict
         prediction = pipe.predict_proba(input_df)
         win_prob = prediction[0][1]
-        lose_prob = prediction[0][0]
+        loss_prob = prediction[0][0]
 
-        st.success(f"🏏 {batting_team} Win Chance: **{win_prob * 100:.2f}%**")
-        st.info(f"🎯 {bowling_team} Win Chance: **{lose_prob * 100:.2f}%**")
+        # Output
+        st.success(f"🏏 {batting_team} Win Chance: **{win_prob*100:.2f}%**")
+        st.info(f"🎯 {bowling_team} Win Chance: **{loss_prob*100:.2f}%**")
 
-        winner = batting_team if win_prob > lose_prob else bowling_team
+        winner = batting_team if win_prob > loss_prob else bowling_team
         st.markdown(f"### 🏆 **{winner} - {team_taglines.get(winner, '')}**")
         st.image(team_logos[winner], width=150)
 
     except Exception as e:
-        st.error(f"❌ Prediction Error: {str(e)}")
-        st.json(input_dict)
+        st.error("Prediction Error: All arrays must be of the same length")
+        st.write("Check if column names and order match the model input:")
+        st.json(input_df.to_dict())

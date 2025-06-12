@@ -25,39 +25,28 @@ TEAM_INFO = {
     'Lucknow Super Giants': {'color': '#A6E503', 'logo': 'lsg_logo.png'}, # Lime Green
     'Gujarat Titans': {'color': '#002E4E', 'logo': 'gt_logo.png'}, # Dark Blue
     'Rajasthan Royals': {'color': '#D21289', 'logo': 'rr_logo.png'}, # Pink/Magenta
+    'Deccan Chargers': {'color': '#B31B1B', 'logo': None}, # Red/Black - Placeholder
+    'Gujarat Lions': {'color': '#F48C42', 'logo': None}, # Orange - Placeholder
+    'Kochi Tuskers Kerala': {'color': '#008080', 'logo': None}, # Teal - Placeholder
+    'Pune Warriors': {'color': '#5C0000', 'logo': None}, # Dark Red - Placeholder
+    'Rising Pune Supergiant': {'color': '#8B0000', 'logo': None}, # Dark Red - Placeholder
+    'Rising Pune Supergiants': {'color': '#8B0000', 'logo': None}, # Dark Red - Placeholder (alias for supergiant)
     # Add other team information here if your model predicts more teams
     'Other Team': {'color': '#CCCCCC', 'logo': None} # Default for teams not explicitly listed
 }
 
 # 3. Get Model Class Names (Team Names in the order your model predicts them)
 #    !!!! IMPORTANT !!!!
-#    REPLACE THIS LIST WITH THE EXACT ORDER YOU GOT FROM YOUR COLAB NOTEBOOK.
-#    Example: If Colab showed ['CSK', 'MI', 'RCB'], then put that here.
-MODEL_CLASSES = np.array(['Chennai Super Kings', 'Mumbai Indians', 'Royal Challengers Bangalore',
-                          'Kolkata Knight Riders', 'Delhi Capitals', 'Sunrisers Hyderabad',
-                          'Punjab Kings', 'Lucknow Super Giants', 'Gujarat Titans',
-                          'Rajasthan Royals']) # Adjust this list EXACTLY to your model's output order!
-
-# --- Helper Function to ensure scalar values ---
-def get_scalar_value(value):
-    """
-    Extracts a scalar value from a potential list or numpy array.
-    If it's already a scalar, returns it as is.
-    If it's a single-element list/array, returns that element.
-    If it's an empty list/array, returns None.
-    If it's a multi-element list/array, returns the first element and warns.
-    """
-    if isinstance(value, (list, np.ndarray)):
-        if len(value) == 1:
-            return value[0]
-        elif len(value) == 0:
-            st.warning(f"Warning: Encountered an empty list/array where a scalar was expected. Returning None for: {value}")
-            return None # Return None or a suitable default
-        else:
-            st.warning(f"Warning: Encountered a list/array with more than one element. Taking first element from: {value}")
-            return value[0]
-    return value
-
+#    THIS LIST IS TAKEN DIRECTLY FROM YOUR COLAB NOTEBOOK'S LabelEncoder.classes_ output.
+MODEL_CLASSES = np.array([
+    'Chennai Super Kings', 'Deccan Chargers', 'Delhi Capitals',
+    'Gujarat Lions', 'Gujarat Titans', 'Kings XI Punjab',
+    'Kochi Tuskers Kerala', 'Kolkata Knight Riders',
+    'Lucknow Super Giants', 'Mumbai Indians',
+    'Pune Warriors', 'Punjab Kings', 'Rajasthan Royals',
+    'Rising Pune Supergiant', 'Rising Pune Supergiants',
+    'Royal Challengers Bangalore', 'Sunrisers Hyderabad'
+])
 
 # --- Streamlit UI Setup ---
 st.set_page_config(layout="wide", page_title="IPL Winner Predictor")
@@ -119,10 +108,10 @@ st.markdown(
 col1, col2 = st.columns(2)
 
 with col1:
-    # Apply get_scalar_value immediately to the output of the widgets
-    batting_team_input = get_scalar_value(st.selectbox('Batting Team', list(TEAM_INFO.keys()), key='bat_team'))
-    bowling_team_input = get_scalar_value(st.selectbox('Bowling Team', list(TEAM_INFO.keys()), key='bowl_team'))
-    city_input = get_scalar_value(st.selectbox('City', [
+    # Explicitly cast to string right from the widget output
+    batting_team_input = str(st.selectbox('Batting Team', list(TEAM_INFO.keys()), key='bat_team'))
+    bowling_team_input = str(st.selectbox('Bowling Team', list(TEAM_INFO.keys()), key='bowl_team'))
+    city_input = str(st.selectbox('City', [
         'Mumbai', 'Delhi', 'Kolkata', 'Chennai', 'Bangalore', 'Hyderabad',
         'Jaipur', 'Ahmedabad', 'Pune', 'Durban', 'Port Elizabeth', 'Centurion',
         'Johannesburg', 'East London', 'Kimberley', 'Bloemfontein', 'Cape Town',
@@ -131,15 +120,19 @@ with col1:
     ], key='city'))
 
 with col2:
-    # Apply get_scalar_value immediately to the output of the widgets
-    total_runs_x_input = get_scalar_value(st.number_input('Total Runs (1st Innings Score)', min_value=1, max_value=300, value=160, step=1, key='total_runs_x'))
-    current_score_input = get_scalar_value(st.number_input('Current Score (by Batting Team)', min_value=0, max_value=300, value=0, step=1, key='current_score'))
-    overs_completed_input = get_scalar_value(st.number_input('Overs Completed (by Batting Team)', min_value=0.0, max_value=20.0, value=0.0, step=0.1, key='overs_completed'))
-    wickets_input = get_scalar_value(st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets'))
+    # Explicitly cast to int/float right from the widget output
+    total_runs_x_input = int(st.number_input('Total Runs (1st Innings Score)', min_value=1, max_value=300, value=160, step=1, key='total_runs_x'))
+    current_score_input = int(st.number_input('Current Score (by Batting Team)', min_value=0, max_value=300, value=0, step=1, key='current_score'))
+    overs_completed_input = float(st.number_input('Overs Completed (by Batting Team)', min_value=0.0, max_value=20.0, value=0.0, step=0.1, key='overs_completed'))
+    wickets_input = int(st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets'))
+
+    # NEW: Add inputs for last_five_runs and last_five_wickets as per your Colab's ColumnTransformer
+    last_five_runs_input = int(st.number_input('Runs in Last 5 Overs', min_value=0, max_value=100, value=0, step=1, key='last_five_runs'))
+    last_five_wickets_input = int(st.number_input('Wickets in Last 5 Overs', min_value=0, max_value=10, value=0, step=1, key='last_five_wickets'))
 
 
 # --- Feature Engineering ---
-# All inputs to these calculations are now guaranteed to be scalars.
+# These calculations now operate on explicitly scalar inputs.
 num_overs = int(overs_completed_input)
 num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10))
 total_balls_played = int(num_overs * 6 + num_balls_in_current_over)
@@ -160,22 +153,22 @@ else:
 
 
 # --- Create Input DataFrame ---
-# This is the crucial part that is causing the issue.
-# Instead of `[value]`, we collect all scalar values into a single dictionary
-# and then create the DataFrame. This is the most common and robust way for a single row.
-input_row = {
-    'batting_team': str(batting_team_input),
-    'bowling_team': str(bowling_team_input),
-    'city': str(city_input),
-    'total_runs_x': int(total_runs_x_input),
-    'balls_left': int(balls_left_calculated),
-    'wickets': int(wickets_input),
-    'rrr': float(rrr_calculated),
-    'runs_left': int(runs_left_calculated),
-    'crr': float(crr_calculated)
+# Create a single dictionary with scalar values. This is then wrapped in a list for DataFrame.
+input_row_data = {
+    'batting_team': batting_team_input,
+    'bowling_team': bowling_team_input,
+    'city': city_input,
+    'total_runs_x': total_runs_x_input,
+    'balls_left': balls_left_calculated,
+    'wickets': wickets_input,
+    'rrr': rrr_calculated,
+    'runs_left': runs_left_calculated,
+    'crr': crr_calculated,
+    'last_five_runs': last_five_runs_input,  # NEW: As per Colab
+    'last_five_wickets': last_five_wickets_input # NEW: As per Colab
 }
 # Create DataFrame from a list containing this single dictionary (this is standard practice)
-input_df = pd.DataFrame([input_row])
+input_df = pd.DataFrame([input_row_data])
 
 
 # --- Make Prediction ---
@@ -234,8 +227,8 @@ if st.button('Predict Winner', key='predict_button'):
     except ValueError as e:
         st.error(f"Prediction Error: {e}")
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
-        st.write("Debug info from `input_row` (this should be a dictionary of scalars):")
-        for key, val in input_row.items():
+        st.write("Debug info from `input_row_data` (this should be a dictionary of scalars):")
+        for key, val in input_row_data.items():
             st.write(f"- {key}: {val} (type: {type(val)})")
 
     except Exception as e:

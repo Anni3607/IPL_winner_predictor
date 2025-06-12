@@ -80,15 +80,20 @@ if st.button('Predict Winner'):
         runs_left = int(target - score)
         crr = score / overs if overs > 0 else 0
         rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
+        wickets_left = 10 - wickets
 
-        # ✅ Corrected column names and order
+        # 🔍 Add this debug section here
+        st.write("Types of all inputs:")
+        st.write("Teams & City types:", type(batting_team), type(bowling_team), type(city))
+        st.write("Numerical types:", type(runs_left), type(balls_left), type(wickets), type(target), type(crr), type(rrr))
+
         input_df = pd.DataFrame([{
             'batting_team': batting_team,
             'bowling_team': bowling_team,
             'city': city,
             'runs_left': runs_left,
             'balls_left': balls_left,
-            'wickets': wickets,  # ✅ MATCHING TRAINED MODEL COLUMN
+            'wickets': wickets,  # Make sure this matches model feature
             'total_runs_x': target,
             'crr': crr,
             'rrr': rrr

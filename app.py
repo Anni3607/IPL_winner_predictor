@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import base64
 
 # Set page configuration
 st.set_page_config(page_title="IPL Win Predictor", page_icon="🏏", layout="centered")
 
-# Taglines per team
+# Taglines for each team
 team_taglines = {
     "Chennai Super Kings": "Whistle Podu! 🦁",
     "Mumbai Indians": "Duniya Hila Denge! 🔵",
@@ -18,41 +17,44 @@ team_taglines = {
     "Sunrisers Hyderabad": "Orange Army Rising! 🟠"
 }
 
+# IPL team logos from web URLs
+team_logos = {
+    "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2d/Chennai_Super_Kings_Logo.png",
+    "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
+    "Kolkata Knight Riders": "https://upload.wikimedia.org/wikipedia/en/4/4c/Kolkata_Knight_Riders_Logo.svg",
+    "Delhi Capitals": "https://upload.wikimedia.org/wikipedia/en/d/dc/Delhi_Capitals.svg",
+    "Royal Challengers Bangalore": "https://upload.wikimedia.org/wikipedia/en/0/09/Royal_Challengers_Bangalore_Logo.svg",
+    "Rajasthan Royals": "https://upload.wikimedia.org/wikipedia/en/6/60/Rajasthan_Royals_Logo.svg",
+    "Punjab Kings": "https://upload.wikimedia.org/wikipedia/en/d/d4/Punjab_Kings_Logo.svg",
+    "Sunrisers Hyderabad": "https://upload.wikimedia.org/wikipedia/en/8/81/Sunrisers_Hyderabad.svg"
+}
+
+# Function to display team logos
+def display_logo_from_url(team_name, width=100):
+    url = team_logos.get(team_name)
+    if url:
+        st.markdown(f"<img src='{url}' width='{width}' style='margin-bottom:10px;'>", unsafe_allow_html=True)
+
 # Set background color
-def set_background():
-    st.markdown("""
-        <style>
-        .stApp {
-            background-color: #f4f9f9;
-            font-family: 'Arial', sans-serif;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f4f9f9;
+        font-family: 'Arial', sans-serif;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Load image and convert to base64 for display
-def get_base64_image(image_path):
-    try:
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    except:
-        return None
+# Display IPL logo (optional: use any online logo or local if preferred)
+st.markdown("""
+    <div style="text-align:center;">
+        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/Indian_Premier_League_Official_Logo.svg" width="120"/>
+    </div>
+""", unsafe_allow_html=True)
 
-# Display team logos and IPL logo
-def display_logo(image_path, width=100):
-    b64 = get_base64_image(image_path)
-    if b64:
-        st.markdown(f"""
-            <img src='data:image/png;base64,{b64}' width='{width}' style='margin-bottom:10px;'>
-        """, unsafe_allow_html=True)
-
-# Apply style
-set_background()
-
-# Top IPL logo
-display_logo("ipl_logo.png", width=120)
 st.title("🏏 IPL Match Win Predictor")
 
-# Load model
+# Load trained model
 pipe = joblib.load("ipl_model.joblib")
 
 teams = [
@@ -70,7 +72,7 @@ cities = [
     'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali'
 ]
 
-# Sidebar input
+# Sidebar inputs
 st.sidebar.header("Match Inputs")
 batting_team = st.sidebar.selectbox("Batting Team", sorted(teams))
 bowling_team = st.sidebar.selectbox("Bowling Team", sorted(teams))
@@ -83,14 +85,13 @@ wickets = st.sidebar.number_input("Wickets Lost", min_value=0, max_value=10)
 
 if st.sidebar.button("Predict"):
 
-    # Feature Engineering
     runs_left = target - score
     balls_left = 120 - int(overs * 6)
     wickets_left = 10 - wickets
     crr = score / overs if overs > 0 else 0
     rrr = (runs_left * 6) / balls_left if balls_left > 0 else 0
 
-    # Fix: wrap everything in lists so all columns are same length
+    # Fix for "All arrays must be of same length"
     input_df = pd.DataFrame({
         'batting_team': [batting_team],
         'bowling_team': [bowling_team],
@@ -112,17 +113,17 @@ if st.sidebar.button("Predict"):
     cols = st.columns(2)
     with cols[0]:
         st.markdown(f"**{batting_team}**")
-        display_logo(f"logos/{batting_team}.png", width=100)
+        display_logo_from_url(batting_team)
     with cols[1]:
         st.markdown(f"**{bowling_team}**")
-        display_logo(f"logos/{bowling_team}.png", width=100)
+        display_logo_from_url(bowling_team)
 
-    # Results
+    # Show prediction
     st.markdown("## 📊 Win Probability")
     st.success(f"🏆 {batting_team} Win Chance: **{win*100:.2f}%**")
     st.info(f"📉 {bowling_team} Win Chance: **{loss*100:.2f}%**")
 
-    # Display tagline for higher predicted team
+    # Tagline of predicted winner
     winner = batting_team if win > loss else bowling_team
     tagline = team_taglines.get(winner, "Let the best team win!")
     st.markdown(f"### 🎉 **{winner} - {tagline}**")

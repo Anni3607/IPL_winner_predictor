@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load the trained model
+# Load trained model
 pipe = joblib.load("ipl_model.pkl")
 
-# Team logos (SVG-safe via markdown)
+# Team logos (SVG safe)
 team_logos = {
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
     "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2e/Chennai_Super_Kings_Logo.svg",
@@ -19,7 +19,7 @@ team_logos = {
     "Lucknow Super Giants": "https://upload.wikimedia.org/wikipedia/en/5/5d/Lucknow_Super_Giants_Logo.svg"
 }
 
-# Taglines for display
+# Taglines
 team_taglines = {
     "Mumbai Indians": "Duniya Hila Denge 🔵",
     "Chennai Super Kings": "Whistle Podu 🦁",
@@ -33,7 +33,7 @@ team_taglines = {
     "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
 }
 
-# Colors for team background
+# Background colors
 team_colors = {
     "Mumbai Indians": "#045093",
     "Chennai Super Kings": "#f4cd1e",
@@ -47,11 +47,10 @@ team_colors = {
     "Lucknow Super Giants": "#164165"
 }
 
-# Header
-st.markdown("<h1 style='text-align: center; color: #222;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
-st.markdown("<div style='text-align:center;'><img src='https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg' width='120'/></div>", unsafe_allow_html=True)
+# Default background
+default_bg = "#f4f9f9"
 
-# Input fields
+# Input UI
 teams = list(team_logos.keys())
 cities = sorted([
     'Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
@@ -62,8 +61,22 @@ cities = sorted([
     'Bengaluru'
 ])
 
-col1, col2 = st.columns(2)
+# --- Set default style initially ---
+st.markdown(f"""
+    <style>
+        .stApp {{
+            background-color: {default_bg};
+            color: #000000;
+        }}
+    </style>
+""", unsafe_allow_html=True)
 
+# Heading
+st.markdown("<h1 style='text-align: center; color: #222;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;'><img src='https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg' width='120'/></div>", unsafe_allow_html=True)
+
+# Inputs
+col1, col2 = st.columns(2)
 with col1:
     batting_team = st.selectbox('Batting Team', sorted(teams))
 with col2:
@@ -75,6 +88,7 @@ score = st.number_input('Current Score', min_value=0)
 overs = st.number_input('Overs Completed', min_value=0.0, max_value=20.0, step=0.1)
 wickets = st.number_input('Wickets Lost', min_value=0, max_value=10, step=1)
 
+# Prediction
 if st.button('Predict Winner'):
     try:
         balls_bowled = overs * 6
@@ -89,7 +103,7 @@ if st.button('Predict Winner'):
             'city': city,
             'runs_left': runs_left,
             'balls_left': balls_left,
-            'wickets': wickets,  # Ensure it matches model's expected feature name
+            'wickets': wickets,
             'total_runs_x': target,
             'crr': crr,
             'rrr': rrr
@@ -98,25 +112,25 @@ if st.button('Predict Winner'):
         prediction = pipe.predict_proba(input_df)
         win = prediction[0][1]
         loss = prediction[0][0]
-
         winner = batting_team if win > loss else bowling_team
 
-        # ✅ Change background based on winner
-        bg_color = team_colors.get(winner, "#ffffff")
+        # ✅ Change background color dynamically
+        bg_color = team_colors.get(winner, default_bg)
         st.markdown(f"""
             <style>
-            .stApp {{
-                background-color: {bg_color};
-            }}
+                .stApp {{
+                    background-color: {bg_color};
+                    color: #ffffff;
+                }}
             </style>
         """, unsafe_allow_html=True)
 
-        # ✅ Show result text & logo
+        # ✅ Output results
+        st.markdown(f"### 🏆 **{winner} - {team_taglines[winner]}**", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center;'><img src='{team_logos[winner]}' width='150'/></div>", unsafe_allow_html=True)
         st.success(f"🏏 {batting_team} Win Chance: **{win*100:.2f}%**")
         st.info(f"🎯 {bowling_team} Win Chance: **{loss*100:.2f}%**")
-        st.markdown(f"### 🏆 **{winner} - {team_taglines.get(winner, '')}**")
-        st.markdown(f"<div style='text-align:center;'><img src='{team_logos[winner]}' width='150'/></div>", unsafe_allow_html=True)
 
     except Exception as e:
-        st.error("Prediction Error: All arrays must be of the same length or mismatch in column names")
+        st.error(f"Error occurred: {e}")
         st.json(input_df.to_dict())

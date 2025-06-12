@@ -55,7 +55,8 @@ st.markdown("""
 st.title("🏏 IPL Match Win Predictor")
 
 # Load model
-pipe = joblib.load("ipl_model.joblib")
+pipe = joblib.load("ipl_model.pkl")
+
 
 # Inputs
 teams = [
@@ -91,7 +92,7 @@ if st.sidebar.button("Predict"):
     crr = score / overs if overs > 0 else 0
     rrr = (runs_left * 6) / balls_left if balls_left > 0 else 0
 
-    # ✅ Correct column names matching trained model
+    # ✅ FIXED COLUMN NAME: 'wickets_left'
     input_df = pd.DataFrame({
         'batting_team': [batting_team],
         'bowling_team': [bowling_team],
@@ -130,3 +131,4 @@ if st.sidebar.button("Predict"):
 
     except Exception as e:
         st.error(f"Prediction Error: {e}")
+        st.json(input_df.to_dict())  # show data if error for debugging

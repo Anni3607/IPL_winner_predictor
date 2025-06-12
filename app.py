@@ -83,19 +83,32 @@ if st.button('Predict Winner'):
         rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
 
         # Ensure matching expected model columns
-        input_df = pd.DataFrame([{
-            'batting_team': batting_team,
-            'bowling_team': bowling_team,
-            'city': city,
-            'runs_left': runs_left,
-            'balls_left': balls_left,
-            'wickets': wickets,  # ✅ MATCHING MODEL COLUMN NAME
-            'total_runs_x': target,
-            'crr': crr,
-            'rrr': rrr
-        }])
+     input_df = pd.DataFrame([{
+    'batting_team': batting_team,
+    'bowling_team': bowling_team,
+    'city': city,
+    'runs_left': runs_left,
+    'balls_left': balls_left,
+    'wickets': wickets,
+    'total_runs_x': target,
+    'crr': crr,
+    'rrr': rrr
+}])
 
-        prediction = pipe.predict_proba(input_df)
+# 🧪 Step 1 & 2 - Debug section
+st.subheader("🔍 Debug Info: Input DataFrame")
+st.dataframe(input_df)
+st.write("📥 Columns sent to model:", list(input_df.columns))
+
+try:
+    st.write("📦 Model expects columns:", list(pipe.feature_names_in_))
+except AttributeError:
+    st.warning("⚠️ Model does not expose feature names — retrain with newer scikit-learn for better debug info.")
+
+# Proceed to predict
+prediction = pipe.predict_proba(input_df)
+
+      
         win_prob = prediction[0][1]
         loss_prob = prediction[0][0]
 

@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Set page configuration
+# Set page config
 st.set_page_config(page_title="IPL Win Predictor", page_icon="🏏", layout="centered")
 
-# Taglines for each team
+# Taglines
 team_taglines = {
     "Chennai Super Kings": "Whistle Podu! 🦁",
     "Mumbai Indians": "Duniya Hila Denge! 🔵",
@@ -17,7 +17,7 @@ team_taglines = {
     "Sunrisers Hyderabad": "Orange Army Rising! 🟠"
 }
 
-# IPL team logos from web URLs
+# Team logos from URLs
 team_logos = {
     "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2d/Chennai_Super_Kings_Logo.png",
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
@@ -29,13 +29,13 @@ team_logos = {
     "Sunrisers Hyderabad": "https://upload.wikimedia.org/wikipedia/en/8/81/Sunrisers_Hyderabad.svg"
 }
 
-# Function to display team logos
+# Logo display function
 def display_logo_from_url(team_name, width=100):
     url = team_logos.get(team_name)
     if url:
         st.markdown(f"<img src='{url}' width='{width}' style='margin-bottom:10px;'>", unsafe_allow_html=True)
 
-# Set background color
+# Background color
 st.markdown("""
     <style>
     .stApp {
@@ -45,7 +45,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Display IPL logo (optional: use any online logo or local if preferred)
+# IPL logo (optional)
 st.markdown("""
     <div style="text-align:center;">
         <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/Indian_Premier_League_Official_Logo.svg" width="120"/>
@@ -54,9 +54,10 @@ st.markdown("""
 
 st.title("🏏 IPL Match Win Predictor")
 
-# Load trained model
+# Load model
 pipe = joblib.load("ipl_model.joblib")
 
+# Inputs
 teams = [
     'Chennai Super Kings', 'Delhi Capitals', 'Kolkata Knight Riders',
     'Mumbai Indians', 'Punjab Kings', 'Rajasthan Royals',
@@ -72,12 +73,11 @@ cities = [
     'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali'
 ]
 
-# Sidebar inputs
-st.sidebar.header("Match Inputs")
+# Sidebar
+st.sidebar.header("Match Details")
 batting_team = st.sidebar.selectbox("Batting Team", sorted(teams))
 bowling_team = st.sidebar.selectbox("Bowling Team", sorted(teams))
-city = st.sidebar.selectbox("Match City", sorted(cities))
-
+city = st.sidebar.selectbox("City", sorted(cities))
 target = st.sidebar.number_input("Target Score", min_value=1)
 score = st.sidebar.number_input("Current Score", min_value=0, max_value=target)
 overs = st.sidebar.number_input("Overs Completed", min_value=0.0, max_value=20.0, step=0.1)
@@ -91,7 +91,7 @@ if st.sidebar.button("Predict"):
     crr = score / overs if overs > 0 else 0
     rrr = (runs_left * 6) / balls_left if balls_left > 0 else 0
 
-    # Fix for "All arrays must be of same length"
+    # ✅ Correct column names matching trained model
     input_df = pd.DataFrame({
         'batting_team': [batting_team],
         'bowling_team': [bowling_team],
@@ -104,26 +104,29 @@ if st.sidebar.button("Predict"):
         'rrr': [rrr]
     })
 
-    prediction = pipe.predict_proba(input_df)
-    loss = prediction[0][0]
-    win = prediction[0][1]
+    try:
+        prediction = pipe.predict_proba(input_df)
+        loss = prediction[0][0]
+        win = prediction[0][1]
 
-    # Display team logos
-    st.markdown("### 🧢 Team Logos")
-    cols = st.columns(2)
-    with cols[0]:
-        st.markdown(f"**{batting_team}**")
-        display_logo_from_url(batting_team)
-    with cols[1]:
-        st.markdown(f"**{bowling_team}**")
-        display_logo_from_url(bowling_team)
+        # Logos
+        st.markdown("### 🧢 Team Logos")
+        cols = st.columns(2)
+        with cols[0]:
+            st.markdown(f"**{batting_team}**")
+            display_logo_from_url(batting_team)
+        with cols[1]:
+            st.markdown(f"**{bowling_team}**")
+            display_logo_from_url(bowling_team)
 
-    # Show prediction
-    st.markdown("## 📊 Win Probability")
-    st.success(f"🏆 {batting_team} Win Chance: **{win*100:.2f}%**")
-    st.info(f"📉 {bowling_team} Win Chance: **{loss*100:.2f}%**")
+        # Win chance
+        st.markdown("## 📊 Win Probability")
+        st.success(f"🏆 {batting_team} Win Chance: **{win*100:.2f}%**")
+        st.info(f"📉 {bowling_team} Win Chance: **{loss*100:.2f}%**")
 
-    # Tagline of predicted winner
-    winner = batting_team if win > loss else bowling_team
-    tagline = team_taglines.get(winner, "Let the best team win!")
-    st.markdown(f"### 🎉 **{winner} - {tagline}**")
+        # Tagline
+        winner = batting_team if win > loss else bowling_team
+        st.markdown(f"### 🎉 **{winner} - {team_taglines.get(winner, 'Let the best team win!')}**")
+
+    except Exception as e:
+        st.error(f"Prediction Error: {e}")

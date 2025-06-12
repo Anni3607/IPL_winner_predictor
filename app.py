@@ -5,7 +5,7 @@ import joblib
 # Load the trained model
 pipe = joblib.load("ipl_model.pkl")
 
-# Logos & Taglines
+# Team logos (SVG-safe via markdown)
 team_logos = {
     "Mumbai Indians": "https://upload.wikimedia.org/wikipedia/en/2/25/Mumbai_Indians_Logo.svg",
     "Chennai Super Kings": "https://upload.wikimedia.org/wikipedia/en/2/2e/Chennai_Super_Kings_Logo.svg",
@@ -19,6 +19,7 @@ team_logos = {
     "Lucknow Super Giants": "https://upload.wikimedia.org/wikipedia/en/5/5d/Lucknow_Super_Giants_Logo.svg"
 }
 
+# Taglines for display
 team_taglines = {
     "Mumbai Indians": "Duniya Hila Denge 🔵",
     "Chennai Super Kings": "Whistle Podu 🦁",
@@ -32,47 +33,48 @@ team_taglines = {
     "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
 }
 
-# Set Background
-st.markdown("""
-    <style>
-        .stApp {
-            background-color: #f4f9f9;
-            font-family: 'Arial', sans-serif;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# Colors for team background
+team_colors = {
+    "Mumbai Indians": "#045093",
+    "Chennai Super Kings": "#f4cd1e",
+    "Kolkata Knight Riders": "#3b215d",
+    "Royal Challengers Bangalore": "#da1818",
+    "Delhi Capitals": "#17449b",
+    "Sunrisers Hyderabad": "#fb4f14",
+    "Punjab Kings": "#c00926",
+    "Rajasthan Royals": "#ea1a8c",
+    "Gujarat Titans": "#0c1c33",
+    "Lucknow Super Giants": "#164165"
+}
 
-# Title & IPL Logo
-st.markdown("<h1 style='text-align: center; color: #333;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
-st.markdown("""
-    <div style="text-align:center;">
-        <img src="https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg" width="120"/>
-    </div>
-""", unsafe_allow_html=True)
+# Header
+st.markdown("<h1 style='text-align: center; color: #222;'>IPL Win Predictor 🏆</h1>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;'><img src='https://upload.wikimedia.org/wikipedia/en/d/d7/IPL_Logo.svg' width='120'/></div>", unsafe_allow_html=True)
 
-# Teams and Cities
+# Input fields
 teams = list(team_logos.keys())
-cities = ['Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
-          'Delhi', 'Chandigarh', 'Kanpur', 'Jaipur', 'Chennai', 'Cape Town',
-          'Port Elizabeth', 'Durban', 'Centurion', 'East London', 'Johannesburg',
-          'Kimberley', 'Bloemfontein', 'Ahmedabad', 'Cuttack', 'Nagpur', 'Dharamsala',
-          'Visakhapatnam', 'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali',
-          'Bengaluru']
+cities = sorted([
+    'Hyderabad', 'Pune', 'Rajkot', 'Indore', 'Bangalore', 'Mumbai', 'Kolkata',
+    'Delhi', 'Chandigarh', 'Kanpur', 'Jaipur', 'Chennai', 'Cape Town',
+    'Port Elizabeth', 'Durban', 'Centurion', 'East London', 'Johannesburg',
+    'Kimberley', 'Bloemfontein', 'Ahmedabad', 'Cuttack', 'Nagpur', 'Dharamsala',
+    'Visakhapatnam', 'Raipur', 'Ranchi', 'Abu Dhabi', 'Sharjah', 'Mohali',
+    'Bengaluru'
+])
 
-# Input Fields
 col1, col2 = st.columns(2)
+
 with col1:
     batting_team = st.selectbox('Batting Team', sorted(teams))
 with col2:
     bowling_team = st.selectbox('Bowling Team', sorted(teams))
 
-city = st.selectbox('Match City', sorted(cities))
+city = st.selectbox('Match City', cities)
 target = st.number_input('Target Score', min_value=1)
 score = st.number_input('Current Score', min_value=0)
 overs = st.number_input('Overs Completed', min_value=0.0, max_value=20.0, step=0.1)
 wickets = st.number_input('Wickets Lost', min_value=0, max_value=10, step=1)
 
-# Prediction Logic
 if st.button('Predict Winner'):
     try:
         balls_bowled = overs * 6
@@ -80,12 +82,6 @@ if st.button('Predict Winner'):
         runs_left = int(target - score)
         crr = score / overs if overs > 0 else 0
         rrr = (runs_left * 6 / balls_left) if balls_left > 0 else 0
-        wickets_left = 10 - wickets
-
-        # 🔍 Add this debug section here
-        st.write("Types of all inputs:")
-        st.write("Teams & City types:", type(batting_team), type(bowling_team), type(city))
-        st.write("Numerical types:", type(runs_left), type(balls_left), type(wickets), type(target), type(crr), type(rrr))
 
         input_df = pd.DataFrame([{
             'batting_team': batting_team,
@@ -93,27 +89,34 @@ if st.button('Predict Winner'):
             'city': city,
             'runs_left': runs_left,
             'balls_left': balls_left,
-            'wickets': wickets,  # Make sure this matches model feature
+            'wickets': wickets,  # Ensure it matches model's expected feature name
             'total_runs_x': target,
             'crr': crr,
             'rrr': rrr
         }])
 
-        # Show input_df for debugging
-        st.write("DataFrame sent to model:", input_df)
-
-        # Predict
         prediction = pipe.predict_proba(input_df)
         win = prediction[0][1]
         loss = prediction[0][0]
 
+        winner = batting_team if win > loss else bowling_team
+
+        # ✅ Change background based on winner
+        bg_color = team_colors.get(winner, "#ffffff")
+        st.markdown(f"""
+            <style>
+            .stApp {{
+                background-color: {bg_color};
+            }}
+            </style>
+        """, unsafe_allow_html=True)
+
+        # ✅ Show result text & logo
         st.success(f"🏏 {batting_team} Win Chance: **{win*100:.2f}%**")
         st.info(f"🎯 {bowling_team} Win Chance: **{loss*100:.2f}%**")
-
-        winner = batting_team if win > loss else bowling_team
         st.markdown(f"### 🏆 **{winner} - {team_taglines.get(winner, '')}**")
-        st.image(team_logos[winner], width=150)
+        st.markdown(f"<div style='text-align:center;'><img src='{team_logos[winner]}' width='150'/></div>", unsafe_allow_html=True)
 
     except Exception as e:
-        st.error("Prediction Error: All arrays must be of the same length")
+        st.error("Prediction Error: All arrays must be of the same length or mismatch in column names")
         st.json(input_df.to_dict())

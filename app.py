@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import numpy as np # Ensure numpy is imported if you use it or pipe might use it
+import numpy as np
 
 # --- Configuration ---
 # 1. Load the trained model
@@ -12,31 +12,48 @@ except FileNotFoundError:
     st.stop()
 
 # 2. Define Team Colors and Logos
-#    Add more teams as needed. You'll need to place the logo files in the same directory
-#    as your app.py or provide full paths.
 TEAM_INFO = {
-    'Mumbai Indians': {'color': '#004B8D', 'logo': 'mi_logo.png'}, # Dark Blue
-    'Chennai Super Kings': {'color': '#FDB913', 'logo': 'csk_logo.png'}, # Yellow
-    'Royal Challengers Bangalore': {'color': '#652D8A', 'logo': 'rcb_logo.png'}, # Purple
-    'Kolkata Knight Riders': {'color': '#3B215E', 'logo': 'kkr_logo.png'}, # Dark Purple
-    'Delhi Capitals': {'color': '#00008B', 'logo': 'dc_logo.png'}, # Dark Blue
-    'Sunrisers Hyderabad': {'color': '#FF822C', 'logo': 'srh_logo.png'}, # Orange
-    'Punjab Kings': {'color': '#B31B1B', 'logo': 'pk_logo.png'}, # Red
-    'Lucknow Super Giants': {'color': '#A6E503', 'logo': 'lsg_logo.png'}, # Lime Green
-    'Gujarat Titans': {'color': '#002E4E', 'logo': 'gt_logo.png'}, # Dark Blue
-    'Rajasthan Royals': {'color': '#D21289', 'logo': 'rr_logo.png'}, # Pink/Magenta
-    # Add other team information here if your model predicts more teams
-    'Other Team': {'color': '#CCCCCC', 'logo': None} # Default for teams not explicitly listed
+    'Mumbai Indians': {'color': '#004B8D', 'logo': 'mi_logo.png'},
+    'Chennai Super Kings': {'color': '#FDB913', 'logo': 'csk_logo.png'},
+    'Royal Challengers Bangalore': {'color': '#652D8A', 'logo': 'rcb_logo.png'},
+    'Kolkata Knight Riders': {'color': '#3B215E', 'logo': 'kkr_logo.png'},
+    'Delhi Capitals': {'color': '#00008B', 'logo': 'dc_logo.png'},
+    'Sunrisers Hyderabad': {'color': '#FF822C', 'logo': 'srh_logo.png'},
+    'Punjab Kings': {'color': '#B31B1B', 'logo': 'pk_logo.png'},
+    'Lucknow Super Giants': {'color': '#A6E503', 'logo': 'lsg_logo.png'},
+    'Gujarat Titans': {'color': '#002E4E', 'logo': 'gt_logo.png'},
+    'Rajasthan Royals': {'color': '#D21289', 'logo': 'rr_logo.png'},
+    'Other Team': {'color': '#CCCCCC', 'logo': None}
 }
 
 # 3. Get Model Class Names (Team Names in the order your model predicts them)
 #    !!!! IMPORTANT !!!!
-#    REPLACE THIS LIST WITH THE EXACT ORDER YOU GOT FROM YOUR COLAB NOTEBOOK (Part 1 of previous instructions).
-#    Example: If Colab showed ['CSK', 'MI', 'RCB'], then put that here.
+#    REPLACE THIS LIST WITH THE EXACT ORDER YOU GOT FROM YOUR COLAB NOTEBOOK.
 MODEL_CLASSES = np.array(['Chennai Super Kings', 'Mumbai Indians', 'Royal Challengers Bangalore',
                           'Kolkata Knight Riders', 'Delhi Capitals', 'Sunrisers Hyderabad',
                           'Punjab Kings', 'Lucknow Super Giants', 'Gujarat Titans',
                           'Rajasthan Royals']) # Adjust this list EXACTLY to your model's output order!
+
+# --- Helper Function to ensure scalar values ---
+def get_scalar_value(value):
+    """
+    Extracts a scalar value from a potential list or numpy array.
+    If it's already a scalar, returns it as is.
+    """
+    if isinstance(value, (list, np.ndarray)):
+        if len(value) == 1:
+            return value[0]
+        elif len(value) == 0:
+            # Handle empty lists/arrays, return a default/NaN or raise error
+            # For our case, likely indicates an issue if it's empty
+            st.error(f"Encountered an empty list/array where a scalar was expected: {value}")
+            return None # Or a suitable default like 0 or 0.0
+        else:
+            st.error(f"Encountered a list/array with more than one element: {value}")
+            # This case indicates a larger logic error, but we'll take the first element defensively
+            return value[0]
+    return value
+
 
 # --- Streamlit UI Setup ---
 st.set_page_config(layout="wide", page_title="IPL Winner Predictor")
@@ -115,41 +132,45 @@ with col2:
     wickets_input = st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets')
 
 # --- Feature Engineering ---
+# Use get_scalar_value to ensure inputs are scalars before calculations
+total_runs_x_input_s = get_scalar_value(total_runs_x_input)
+current_score_input_s = get_scalar_value(current_score_input)
+overs_completed_input_s = get_scalar_value(overs_completed_input)
+wickets_input_s = get_scalar_value(wickets_input)
+
 # Ensure all intermediate calculations result in scalar int/float values.
-# Adding extra defensive casting here as well.
-num_overs = int(overs_completed_input)
-# The `round` and `int()` ensures we handle overs like 5.3 correctly (5 overs, 3 balls)
-num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10))
+num_overs = int(overs_completed_input_s)
+num_balls_in_current_over = int(round((overs_completed_input_s - num_overs) * 10))
 total_balls_played = int(num_overs * 6 + num_balls_in_current_over)
 balls_left_calculated = int(120 - total_balls_played)
 balls_left_calculated = max(0, balls_left_calculated)
 
-runs_left_calculated = int(total_runs_x_input - current_score_input)
+runs_left_calculated = int(total_runs_x_input_s - current_score_input_s)
 
-# Defensive casting to float before division to prevent int division issues and ensure float result
 if float(balls_left_calculated) > 0:
     rrr_calculated = float((runs_left_calculated * 6) / float(balls_left_calculated))
 else:
     rrr_calculated = 0.0
 
-if float(overs_completed_input) > 0:
-    crr_calculated = float(current_score_input / float(overs_completed_input))
+if float(overs_completed_input_s) > 0:
+    crr_calculated = float(current_score_input_s / float(overs_completed_input_s))
 else:
     crr_calculated = 0.0
 
 
 # --- Create Input DataFrame ---
-# EXTREME TYPE ENFORCEMENT HERE: Ensure every value is a scalar before putting into list []
+# Apply get_scalar_value on all inputs just before putting into the final list
+# and then cast to the expected type for the model.
 input_data = {
-    'batting_team': [str(batting_team_input)],
-    'bowling_team': [str(bowling_team_input)],
-    'city': [str(city_input)],
-    'total_runs_x': [int(total_runs_x_input)],
-    'balls_left': [int(balls_left_calculated)],
-    'wickets': [int(wickets_input)],
-    'rrr': [float(rrr_calculated)],
-    'runs_left': [int(runs_left_calculated)],
-    'crr': [float(crr_calculated)]
+    'batting_team': [str(get_scalar_value(batting_team_input))],
+    'bowling_team': [str(get_scalar_value(bowling_team_input))],
+    'city': [str(get_scalar_value(city_input))],
+    'total_runs_x': [int(get_scalar_value(total_runs_x_input_s))],
+    'balls_left': [int(get_scalar_value(balls_left_calculated))],
+    'wickets': [int(get_scalar_value(wickets_input_s))],
+    'rrr': [float(get_scalar_value(rrr_calculated))],
+    'runs_left': [int(get_scalar_value(runs_left_calculated))],
+    'crr': [float(get_scalar_value(crr_calculated))]
 }
 input_df = pd.DataFrame(input_data)
 
@@ -173,7 +194,7 @@ if st.button('Predict Winner', key='predict_button'):
         winning_probability = team_probabilities.iloc[0]['Probability']
 
         # --- Dynamic Background Color ---
-        winning_team_color = TEAM_INFO.get(winning_team, {}).get('color', '#0e1117') # Default dark if not found
+        winning_team_color = TEAM_INFO.get(winning_team, {}).get('color', '#0e1117')
         st.markdown(
             f"""
             <style>
@@ -187,7 +208,7 @@ if st.button('Predict Winner', key='predict_button'):
 
         # --- Display Winner and Probabilities ---
         st.subheader("Win Probabilities:")
-        col_prob, col_logo = st.columns([0.7, 0.3]) # Adjust column width for logo
+        col_prob, col_logo = st.columns([0.7, 0.3])
 
         with col_prob:
             for index, row in team_probabilities.iterrows():
@@ -209,9 +230,19 @@ if st.button('Predict Winner', key='predict_button'):
     except ValueError as e:
         st.error(f"Prediction Error: {e}")
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
-        st.write("Debug info from `input_data` values:")
-        for key, val in input_data.items():
-            st.write(f"- {key}: {val} (type: {type(val)}, inner_type: {type(val[0]) if isinstance(val, list) and val else 'N/A'})")
+        st.write("Debug info from `input_data` values (before final list wrapping):")
+        # This will now show the scalar value before it's wrapped in a list.
+        # This is for internal debugging, you can remove this section later.
+        st.write(f"- batting_team: {get_scalar_value(batting_team_input)} (type: {type(get_scalar_value(batting_team_input))})")
+        st.write(f"- bowling_team: {get_scalar_value(bowling_team_input)} (type: {type(get_scalar_value(bowling_team_input))})")
+        st.write(f"- city: {get_scalar_value(city_input)} (type: {type(get_scalar_value(city_input))})")
+        st.write(f"- total_runs_x: {get_scalar_value(total_runs_x_input_s)} (type: {type(get_scalar_value(total_runs_x_input_s))})")
+        st.write(f"- balls_left: {get_scalar_value(balls_left_calculated)} (type: {type(get_scalar_value(balls_left_calculated))})")
+        st.write(f"- wickets: {get_scalar_value(wickets_input_s)} (type: {type(get_scalar_value(wickets_input_s))})")
+        st.write(f"- rrr: {get_scalar_value(rrr_calculated)} (type: {type(get_scalar_value(rrr_calculated))})")
+        st.write(f"- runs_left: {get_scalar_value(runs_left_calculated)} (type: {type(get_scalar_value(runs_left_calculated))})")
+        st.write(f"- crr: {get_scalar_value(crr_calculated)} (type: {type(get_scalar_value(crr_calculated))})")
+
     except Exception as e:
         st.error(f"An unexpected error occurred during prediction: {e}")
         st.write("Please check your input values and the model's compatibility, and ensure your `MODEL_CLASSES` list in `app.py` is correct.")

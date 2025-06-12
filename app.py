@@ -1,5 +1,5 @@
 import streamlit as st
-import joblib
+import cloudpickle
 import pandas as pd
 
 # Load the trained model

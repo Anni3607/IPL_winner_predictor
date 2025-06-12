@@ -93,16 +93,18 @@ if st.sidebar.button("Predict"):
     rrr = (runs_left * 6) / balls_left if balls_left > 0 else 0
 
     # ✅ FIXED COLUMN NAME: 'wickets_left'
-    input_df = pd.DataFrame({
-        'batting_team': [batting_team],
-        'bowling_team': [bowling_team],
-        'city': [city],
-        'runs_left': [runs_left],
-        'balls_left': [balls_left],
-        'wickets_left': [wickets_left],
-        'total_runs_x': [target],
-        'crr': [crr],
-        'rrr': [rrr]
+   input_df = pd.DataFrame({
+    'batting_team': [batting_team],
+    'bowling_team': [bowling_team],
+    'city': [city],
+    'runs_left': [runs_left],
+    'balls_left': [balls_left],
+    'wickets_left': [10 - wickets],  # ✅ FIXED
+    'total_runs_x': [target],
+    'crr': [crr],
+    'rrr': [rrr]
+})
+
     })
 
     try:

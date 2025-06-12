@@ -51,12 +51,10 @@ def get_scalar_value(value):
         if len(value) == 1:
             return value[0]
         elif len(value) == 0:
-            # Handle empty lists/arrays defensively, return None (or appropriate default)
-            st.warning(f"Warning: Encountered an empty list/array where a scalar was expected: {value}")
-            return None
+            st.warning(f"Warning: Encountered an empty list/array where a scalar was expected. Returning None for: {value}")
+            return None # Return None or a suitable default
         else:
-            # This case indicates a larger logic error, but we'll take the first element defensively
-            st.warning(f"Warning: Encountered a list/array with more than one element. Taking first element: {value}")
+            st.warning(f"Warning: Encountered a list/array with more than one element. Taking first element from: {value}")
             return value[0]
     return value
 
@@ -121,9 +119,9 @@ st.markdown(
 col1, col2 = st.columns(2)
 
 with col1:
-    batting_team_input = st.selectbox('Batting Team', list(TEAM_INFO.keys()), key='bat_team')
-    bowling_team_input = st.selectbox('Bowling Team', list(TEAM_INFO.keys()), key='bowl_team')
-    city_input = st.selectbox('City', [
+    batting_team_input_raw = st.selectbox('Batting Team', list(TEAM_INFO.keys()), key='bat_team')
+    bowling_team_input_raw = st.selectbox('Bowling Team', list(TEAM_INFO.keys()), key='bowl_team')
+    city_input_raw = st.selectbox('City', [
         'Mumbai', 'Delhi', 'Kolkata', 'Chennai', 'Bangalore', 'Hyderabad',
         'Jaipur', 'Ahmedabad', 'Pune', 'Durban', 'Port Elizabeth', 'Centurion',
         'Johannesburg', 'East London', 'Kimberley', 'Bloemfontein', 'Cape Town',
@@ -132,51 +130,54 @@ with col1:
     ], key='city')
 
 with col2:
-    total_runs_x_input = st.number_input('Total Runs (1st Innings Score)', min_value=1, max_value=300, value=160, step=1, key='total_runs_x')
-    current_score_input = st.number_input('Current Score (by Batting Team)', min_value=0, max_value=300, value=0, step=1, key='current_score')
-    overs_completed_input = st.number_input('Overs Completed (by Batting Team)', min_value=0.0, max_value=20.0, value=0.0, step=0.1, key='overs_completed')
-    wickets_input = st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets')
+    total_runs_x_input_raw = st.number_input('Total Runs (1st Innings Score)', min_value=1, max_value=300, value=160, step=1, key='total_runs_x')
+    current_score_input_raw = st.number_input('Current Score (by Batting Team)', min_value=0, max_value=300, value=0, step=1, key='current_score')
+    overs_completed_input_raw = st.number_input('Overs Completed (by Batting Team)', min_value=0.0, max_value=20.0, value=0.0, step=0.1, key='overs_completed')
+    wickets_input_raw = st.number_input('Wickets Fallen', min_value=0, max_value=10, value=0, step=1, key='wickets')
 
 # --- Feature Engineering ---
-# Always get scalar values before performing calculations.
-# This ensures that calculations are done with pure numbers, not lists/arrays.
-total_runs_x_input_s = get_scalar_value(total_runs_x_input)
-current_score_input_s = get_scalar_value(current_score_input)
-overs_completed_input_s = get_scalar_value(overs_completed_input)
-wickets_input_s = get_scalar_value(wickets_input)
+# Apply get_scalar_value to all raw inputs immediately after collection
+batting_team_input = get_scalar_value(batting_team_input_raw)
+bowling_team_input = get_scalar_value(bowling_team_input_raw)
+city_input = get_scalar_value(city_input_raw)
+total_runs_x_input = get_scalar_value(total_runs_x_input_raw)
+current_score_input = get_scalar_value(current_score_input_raw)
+overs_completed_input = get_scalar_value(overs_completed_input_raw)
+wickets_input = get_scalar_value(wickets_input_raw)
+
 
 # Perform calculations, ensuring scalar results at each step.
-num_overs = int(overs_completed_input_s)
-num_balls_in_current_over = int(round((overs_completed_input_s - num_overs) * 10))
+num_overs = int(overs_completed_input)
+num_balls_in_current_over = int(round((overs_completed_input - num_overs) * 10))
 total_balls_played = int(num_overs * 6 + num_balls_in_current_over)
 balls_left_calculated = int(120 - total_balls_played)
 balls_left_calculated = max(0, balls_left_calculated)
 
-runs_left_calculated = int(total_runs_x_input_s - current_score_input_s)
+runs_left_calculated = int(total_runs_x_input - current_score_input)
 
 if float(balls_left_calculated) > 0:
     rrr_calculated = float((runs_left_calculated * 6) / float(balls_left_calculated))
 else:
     rrr_calculated = 0.0
 
-if float(overs_completed_input_s) > 0:
-    crr_calculated = float(current_score_input_s / float(overs_completed_input_s))
+if float(overs_completed_input) > 0:
+    crr_calculated = float(current_score_input / float(overs_completed_input))
 else:
     crr_calculated = 0.0
 
 
 # --- Create Input DataFrame ---
-# Apply get_scalar_value to ALL final inputs just before creating the DataFrame row.
+# Now, all variables passed to input_data are guaranteed to be scalars.
 input_data = {
-    'batting_team': [str(get_scalar_value(batting_team_input))],
-    'bowling_team': [str(get_scalar_value(bowling_team_input))],
-    'city': [str(get_scalar_value(city_input))],
-    'total_runs_x': [int(get_scalar_value(total_runs_x_input_s))],
-    'balls_left': [int(get_scalar_value(balls_left_calculated))],
-    'wickets': [int(get_scalar_value(wickets_input_s))],
-    'rrr': [float(get_scalar_value(rrr_calculated))],
-    'runs_left': [int(get_scalar_value(runs_left_calculated))],
-    'crr': [float(get_scalar_value(crr_calculated))]
+    'batting_team': [str(batting_team_input)],
+    'bowling_team': [str(bowling_team_input)],
+    'city': [str(city_input)],
+    'total_runs_x': [int(total_runs_x_input)],
+    'balls_left': [int(balls_left_calculated)],
+    'wickets': [int(wickets_input)],
+    'rrr': [float(rrr_calculated)],
+    'runs_left': [int(runs_left_calculated)],
+    'crr': [float(crr_calculated)]
 }
 input_df = pd.DataFrame(input_data)
 
@@ -237,17 +238,18 @@ if st.button('Predict Winner', key='predict_button'):
         st.error(f"Prediction Error: {e}")
         st.error("This often means there's a mismatch in column names or data types. Please check the 'DataFrame sent to Model' above and compare it with the expected columns from your training data.")
         st.write("Debug info from `input_data` values (after `get_scalar_value` and before final list wrapping):")
-        # This will now show the scalar value before it's wrapped in a list.
-        st.write(f"- batting_team: {str(get_scalar_value(batting_team_input))} (type: {type(str(get_scalar_value(batting_team_input)))})")
-        st.write(f"- bowling_team: {str(get_scalar_value(bowling_team_input))} (type: {type(str(get_scalar_value(bowling_team_input)))})")
-        st.write(f"- city: {str(get_scalar_value(city_input))} (type: {type(str(get_scalar_value(city_input)))})")
-        st.write(f"- total_runs_x: {int(get_scalar_value(total_runs_x_input_s))} (type: {type(int(get_scalar_value(total_runs_x_input_s)))})")
-        st.write(f"- balls_left: {int(get_scalar_value(balls_left_calculated))} (type: {type(int(get_scalar_value(balls_left_calculated)))})")
-        st.write(f"- wickets: {int(get_scalar_value(wickets_input_s))} (type: {type(int(get_scalar_value(wickets_input_s)))})")
-        st.write(f"- rrr: {float(get_scalar_value(rrr_calculated))} (type: {type(float(get_scalar_value(rrr_calculated)))})")
-        st.write(f"- runs_left: {int(get_scalar_value(runs_left_calculated))} (type: {type(int(get_scalar_value(runs_left_calculated)))})")
-        st.write(f"- crr: {float(get_scalar_value(crr_calculated))} (type: {type(float(get_scalar_value(crr_calculated)))})")
+        # These debug prints will now show truly scalar values if the fix works.
+        st.write(f"- batting_team: {batting_team_input} (type: {type(batting_team_input)})")
+        st.write(f"- bowling_team: {bowling_team_input} (type: {type(bowling_team_input)})")
+        st.write(f"- city: {city_input} (type: {type(city_input)})")
+        st.write(f"- total_runs_x: {total_runs_x_input} (type: {type(total_runs_x_input)})")
+        st.write(f"- balls_left: {balls_left_calculated} (type: {type(balls_left_calculated)})")
+        st.write(f"- wickets: {wickets_input} (type: {type(wickets_input)})")
+        st.write(f"- rrr: {rrr_calculated} (type: {type(rrr_calculated)})")
+        st.write(f"- runs_left: {runs_left_calculated} (type: {type(runs_left_calculated)})")
+        st.write(f"- crr: {crr_calculated} (type: {type(crr_calculated)})")
 
     except Exception as e:
         st.error(f"An unexpected error occurred during prediction: {e}")
         st.write("Please check your input values and the model's compatibility, and ensure your `MODEL_CLASSES` list in `app.py` is correct.")
+

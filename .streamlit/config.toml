@@ -1,0 +1,17 @@
+# .streamlit/config.toml
+[theme]
+# Default background color before any prediction is made.
+# This will be overridden dynamically by your app's code after prediction.
+backgroundColor="#F0F2F6" # A clean, light grey for the default background.
+
+# Primary accent color (used for buttons, links, etc.)
+primaryColor="#e60023" # A vibrant IPL red/maroon
+
+# Background color for elements like text inputs, select boxes, and sidebar.
+secondaryBackgroundColor="#FFFFFF" # Pure white for clarity on inputs
+
+# Main text color
+textColor="#313131" # A dark grey for excellent readability
+
+# Font family
+font="sans serif" # Clean, modern font

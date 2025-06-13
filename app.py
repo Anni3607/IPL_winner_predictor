@@ -151,28 +151,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Header Section with IPL Trophy Logo ---
-# Define the path to your IPL Trophy logo. Make sure 'ipl_trophy.png' is in your 'logos' folder.
-ipl_trophy_logo_path = "logos/ipl_trorophy.png" # Path confirmed correct
-
-# Try loading the trophy logo using PIL (for better rendering control and error handling)
-ipl_trophy_img = None
-try:
-    ipl_trophy_img = Image.open(ipl_trophy_logo_path)
-except FileNotFoundError:
-    st.warning(f"Warning: IPL Trophy logo not found at '{ipl_trophy_logo_path}'. Displaying text title only.")
-except Exception as e:
-    st.warning(f"Error loading IPL Trophy logo: {e}. Displaying text title only.")
-
-# Use columns for better centering of the title and logo
-col_logo_left, col_title, col_logo_right = st.columns([1, 4, 1]) # Adjust ratios for centering
+# --- Header Section (IPL Trophy Logo Removed) ---
+# Use columns for better centering of the title
+col_left, col_title, col_right = st.columns([1, 4, 1])
 
 with col_title:
-    if ipl_trophy_img:
-        # Changed use_column_width to use_container_width to remove deprecation warning
-        st.image(ipl_trophy_img, width=150, use_container_width=True, output_format="PNG")
-    # You had st.title("🏆 IPL Win Predictor") but now using markdown for more control
-    st.markdown("<h1 style='text-align: center; margin-top: -30px;'>IPL Win Predictor</h1>", unsafe_allow_html=True) # Adjust margin to pull title up
+    st.markdown("<h1 style='text-align: center;'>IPL Win Predictor</h1>", unsafe_allow_html=True)
 
 st.markdown("---") # Horizontal rule for separation
 
@@ -346,4 +330,3 @@ if st.button("Predict Winner", disabled=predict_button_disabled):
 # --- Footer ---
 st.markdown("---") # Horizontal rule
 st.markdown("<p style='text-align: center; font-size: 0.9em; color: #888;'>Developed by Your Name/Team | Data from IPL Seasons</p>", unsafe_allow_html=True)
-# Small change to trigger redeploy for IPL trophy logo (This comment was from the previous step)

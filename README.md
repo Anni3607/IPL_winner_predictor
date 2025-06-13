@@ -13,7 +13,7 @@ If you've ever found yourself wondering who's got the real edge during an IPL ma
 It's easy to get started!
 
 1.  **Go to the App:**
-    Just click this link: (https://iplwinnerpredictor-htcxhxorjtxkbc4gyou5bb.streamlit.app/\)
+    Just click this link: (https://iplwinnerpredictor-htcxhxorjtxkbc4gyou5bb.streamlit.app/)
   
 
 2.  **Enter Match Details:**

@@ -47,18 +47,16 @@ team_colors = {
     "Lucknow Super Giants": "#00B894"
 }
 
-# --- Streamlit Page Configuration (already good) ---
+# --- Streamlit Page Configuration ---
 st.set_page_config(layout="centered", page_title="IPL Win Predictor", page_icon="🏆")
 
-# --- Function to get base64 encoded image (already good, but ensure paths) ---
+# --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except FileNotFoundError:
-        # st.warning(f"Warning: Logo file not found at {image_path}. Displaying placeholder.")
-        return None # Return None if not found, let the caller decide what to display
-
+        return None
 
 # --- Custom CSS (Refined and consolidated) ---
 st.markdown("""
@@ -154,9 +152,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Header Section with IPL Trophy Logo ---
-# Define the path to your IPL Trophy logo. Make sure 'ipl_trophy.png' is in your project's root or adjust path.
-ipl_trophy_logo_path = "logos/ipl_trophy.png" # Assuming trophy image is in the root directory
-# You can also place it in a 'logos' folder if preferred: "logos/ipl_trophy.png"
+# Define the path to your IPL Trophy logo. Make sure 'ipl_trophy.png' is in your 'logos' folder.
+ipl_trophy_logo_path = "logos/ipl_trorophy.png" # Path confirmed correct
 
 # Try loading the trophy logo using PIL (for better rendering control and error handling)
 ipl_trophy_img = None
@@ -172,7 +169,8 @@ col_logo_left, col_title, col_logo_right = st.columns([1, 4, 1]) # Adjust ratios
 
 with col_title:
     if ipl_trophy_img:
-        st.image(ipl_trophy_img, width=150, use_column_width="always", output_format="PNG") # Make image responsive, set max width
+        # Changed use_column_width to use_container_width to remove deprecation warning
+        st.image(ipl_trophy_img, width=150, use_container_width=True, output_format="PNG")
     # You had st.title("🏆 IPL Win Predictor") but now using markdown for more control
     st.markdown("<h1 style='text-align: center; margin-top: -30px;'>IPL Win Predictor</h1>", unsafe_allow_html=True) # Adjust margin to pull title up
 
@@ -324,7 +322,7 @@ if st.button("Predict Winner", disabled=predict_button_disabled):
         if logo_base_name == "chennai_super_kings": logo_base_name = "csk"
         elif logo_base_name == "royal_challengers_bangalore": logo_base_name = "rcb"
         elif logo_base_name == "mumbai_indians": logo_base_name = "mumbai"
-        elif logo_base_name == "sunrisers_hyderabad": logo_base_name = "srh" # Example for SRH if you have srh.png
+        elif logo_base_name == "sunrisers_hyderabad": logo_base_name = "srh"
         elif logo_base_name == "kolkata_knight_riders": logo_base_name = "kkr"
         elif logo_base_name == "delhi_capitals": logo_base_name = "dc"
         elif logo_base_name == "punjab_kings": logo_base_name = "pbks"
@@ -348,4 +346,4 @@ if st.button("Predict Winner", disabled=predict_button_disabled):
 # --- Footer ---
 st.markdown("---") # Horizontal rule
 st.markdown("<p style='text-align: center; font-size: 0.9em; color: #888;'>Developed by Your Name/Team | Data from IPL Seasons</p>", unsafe_allow_html=True)
-# Force deploy
+# Small change to trigger redeploy for IPL trophy logo (This comment was from the previous step)

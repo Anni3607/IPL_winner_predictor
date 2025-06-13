@@ -22,7 +22,7 @@ team_taglines = {
     "Kolkata Knight Riders": "Korbo Lorbo Jeetbo 💜",
     "Delhi Capitals": "Roar Macha 🦅",
     "Sunrisers Hyderabad": "Orange Army 🧡",
-    "Punjab Kings": "Sadda Punjab ❤️",
+    "Punjab Kings": "Sadda Punjab ❤",
     "Rajasthan Royals": "Halla Bol 💗",
     "Gujarat Titans": "Aava De! 💪",
     "Lucknow Super Giants": "Ab Apni Baari Hai 💥"
@@ -104,14 +104,14 @@ if st.button("Predict Winner"):
             </style>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"### 🏏 **{batting_team} Win Chance:** `{win_prob*100:.2f}%`")
-        st.markdown(f"### 🎯 **{bowling_team} Win Chance:** `{loss_prob*100:.2f}%`")
-        st.markdown(f"### 🏆 **Winner: {winner} - {team_taglines[winner]}**")
+        st.markdown(f"### 🏏 *{batting_team} Win Chance:* {win_prob*100:.2f}%")
+        st.markdown(f"### 🎯 *{bowling_team} Win Chance:* {loss_prob*100:.2f}%")
+        st.markdown(f"### 🏆 *Winner: {winner} - {team_taglines[winner]}*")
 
         # Show local team logo
         logo_file = f"logos/{winner.lower().replace(' ', '_').replace('super_kings','csk').replace('royal_challengers_bangalore','rcb').replace('mumbai_indians','mumbai')}.png"
         st.image(logo_file, width=150)
 
     except Exception as e:
-        st.error("⚠️ Prediction failed. Please check input.")
+        st.error("⚠ Prediction failed. Please check input.")
         st.exception(e)

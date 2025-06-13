@@ -155,7 +155,7 @@ st.markdown("""
 
 # --- Header Section with IPL Trophy Logo ---
 # Define the path to your IPL Trophy logo. Make sure 'ipl_trophy.png' is in your project's root or adjust path.
-ipl_trophy_logo_path = "ipl_trophy.png" # Assuming trophy image is in the root directory
+ipl_trophy_logo_path = "logos/ipl_trophy.png" # Assuming trophy image is in the root directory
 # You can also place it in a 'logos' folder if preferred: "logos/ipl_trophy.png"
 
 # Try loading the trophy logo using PIL (for better rendering control and error handling)

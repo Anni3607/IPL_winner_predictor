@@ -184,8 +184,8 @@ city = st.selectbox("Match City", sorted(cities), key="match_city_select")
 target = st.number_input("Target Score", min_value=1, value=150, help="Total runs the batting team needs to chase.")
 score = st.number_input("Current Score", min_value=0, value=0, help="Current runs scored by the batting team.")
 overs = st.number_input("Overs Completed", min_value=0.0, max_value=20.0, value=0.0, step=0.1, help="Total overs bowled so far.")
-wickets_remaining = st.number_input("Wickets Remaining", min_value=0, max_value=10, value=10, step=1, help="Wickets the batting team has left (starts from 10).")
-wickets = 10 - wickets_remaining  # Internally convert to wickets lost for model compatibility
+wickets = st.number_input("Wickets Remaining", min_value=0, max_value=10, value=10, step=1, help="Wickets the batting team has left (starts from 10).")
+
 
 
 

@@ -160,7 +160,6 @@ with col_title:
 
 st.markdown("---") # Horizontal rule for separation
 
-st.markdown("<p style='text-align: center; font-size: 0.9em; color: #888;'>Developed by <strong>Anirudha Pujari</strong> </p>", unsafe_allow_html=True)
 
 
 # --- Input Section ---
@@ -334,4 +333,4 @@ if st.button("Predict Winner", disabled=predict_button_disabled):
 
 # --- Footer ---
 st.markdown("---") # Horizontal rule
-st.markdown("<p style='text-align: center; font-size: 0.9em; color: #888;'>Developed by Your Name/Team | Data from IPL Seasons</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 0.9em; color: #888;'>Developed by Anirudha Pujari</p>", unsafe_allow_html=True)

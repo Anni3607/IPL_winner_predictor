@@ -15,3 +15,6 @@ textColor="#313131" # A dark grey for excellent readability
 
 # Font family
 font="sans serif" # Clean, modern font
+
+[server]
+fileWatcherType = "poll"
